@@ -136,7 +136,9 @@ beforeRouteEnter(to, from, next) {
 ```bash
 Access to script at 'https://res.wx.qq.com/open/js/jweixin-1.4.0.js' from origin 'http://localhost:5000' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://open.weixin.qq.com' that is not equal to the supplied origin.
 ```
-解决办法：正则匹配，请求公司域名的js地址为script标签加上crossorigin属性
+解决办法：正则匹配，请求公司域名的js地址为script标签加上crossorigin属性 
+
+[推荐文章](https://www.jianshu.com/p/a45c9d089c93)
 
 ## 工具函数&组件相关
 #### 11、jsonp请求工具函数封装总结
