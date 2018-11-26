@@ -7,11 +7,13 @@
 - 直播微信小程序时间段：小程序调研开发(9/21-9/26)，涉及到直播审核风险后放弃，直播类微信小程序需要 信息网络传播视听节目许可证 或 网络文化经营许可证 或 每年缴纳50万给腾讯才能确保审核通过
 - 开发联调测试上线时间段：一期上部分(9/27-10/17)，一期下部分(10/8-10/24)，二期(11/12-11/28)
 
+## 直播相关
 #### 1、video标签播放HLS协议直播流
 - [本地搭建直播流服务器](./搭建本地直播流服务器.md)
 - HLS协议直播流相对RTMP协议延时较高
 - video标签在播放直播流的过程中是可以暂停的，为了让所有用户实时观看到最新的直播信息，在暂停的事件监听器中重新渲染video，后台在断流结束直播的时候确保所有用户看到的都是快结束的直播流视频
 
+## Vue相关
 #### 2、用户体验（浏览器历史记录前进后退，保留路由页面滚动位置）
 见：[Vue Router异步滚动](https://router.vuejs.org/zh/guide/advanced/scroll-behavior.html#滚动行为)
 该功能只是针对document.body滚动位置有效，遇到无限滚动加载的页面配合使用Vue内置组件[keep-alive](https://cn.vuejs.org/v2/api/#keep-alive)
@@ -35,8 +37,62 @@ this.$request.get('/getdata')
     }
   })
 ```
+#### 5、理解页面路由守卫beforeRouteEnter中执行next(false)
+- 首先执行next(false)不会执行路由匹配组件的生命周期函数
+- 当前路由的路径是上一个路由的路径而不是当前执行next(false)所在组件的路由path
 
-#### 5、微信分享问题
+```js
+// 当重定向授权成功后 按历史记录返回键返回时并不是该代码段所在组件匹配到的路由path
+beforeRouteEnter(to, from, next) {
+  // 客户端未授权
+  if (typeof window !== 'undefined' && !window.openId) {
+    // 重定向微信授权，逻辑省略...
+    next(false)
+    return;
+  }
+  next()
+}
+
+// 当重定向授权成功后 按历史记录返回键返回正常
+beforeRouteEnter(to, from, next) {
+  next(vm => {
+    // 服务端执行 或 已授权
+    if (vm.$isServer || window.openId) {
+      return;
+    }
+    // 重定向微信授权，逻辑省略...
+  });
+}
+```
+#### 6、列表分页无限加载需要注意的问题
+- 由于是单页应用，数据驱动，在满足请求下一页的情况下，需做一下延时阻塞处理，否则会出现在滚动满足请求条件的情况下请求多页数据
+
+```js
+  async scrollEventListener() {
+    if (this.loading || (this.pageIndex !== 1 && this.pageIndex >= this.totalPages)) {
+      return;
+    }
+
+    const { clientHeight, scrollHeight } = document.documentElement;
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop || window.scrollTop;
+
+    if (scrollTop + clientHeight >= scrollHeight) {
+      this.loading = true;
+      this.errorMsg = '';
+
+      // 单页应用，数据驱动，
+      await new Promise(r => {
+        setTimeout(r, 500);
+      });
+
+      this.pageIndex++;
+      await this.requestNextPageData();
+      this.loading = false;
+    }
+  }
+```
+## 微信相关
+#### 7、微信分享问题
 3.1、排查invalid signature，一般出现这个问题有两点：
 
   - 检查wx.config配置的appId是否一致
@@ -44,7 +100,46 @@ this.$request.get('/getdata')
 
 3.2、版本判断，引用微信jssdk1.4.0，且微信版本大于等于6.7.2，则使用最新的分享朋友，分享到朋友圈api
 
-#### 6、jsonp请求工具函数封装总结
+#### 8、微信浏览器内核的一些问题
+- video标签正在播放状态时，路由无法跳转，路由离开之前需暂停video播放
+- 安卓微信app支持video小窗播放，需增加x5-playsinlines属性
+
+```html
+<video
+  v-if="liveData.videoSrc"
+  ref="video"
+  class="live-player"
+  :src="liveData.videoSrc"
+  :poster="liveData.coverImageUrl"
+  preload
+  controls
+  x5-playsinline
+  webkit-playsinline="isiPhoneShowPlaysinline"
+  playsinline="isiPhoneShowPlaysinline">
+</video>
+```
+#### 9、本地测试微信授权，微信分享功能
+- 1、nginx监听80端口，server_name设为微信公众平台网页授权域名/JS接口安全域名，路径proxy_pass设为localhost:port
+- 2、本地hosts 配置域名解析，127.0.0.1 微信公众平台网页授权域名/JS接口安全域名
+
+## 跨域相关
+#### 10、谨慎使用crossorigin属性
+我的html页面包含如下一段代码
+```html
+<script src="https://res.wx.qq.com/open/js/jweixin-1.4.0.js"></script>
+```
+由于公司cdn js资源地址请求都设置了响应头Access-Control-Allow-Origin:* ，为了捕捉更详细的错误信息，服务端做了统一处理，渲染后变成了如下：
+```html
+<script crossorigin src="https://res.wx.qq.com/open/js/jweixin-1.4.0.js"></script>
+```
+浏览器直接报如下类似的跨域请求错误
+```bash
+Access to script at 'https://res.wx.qq.com/open/js/jweixin-1.4.0.js' from origin 'http://localhost:5000' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'http://open.weixin.qq.com' that is not equal to the supplied origin.
+```
+解决办法：正则匹配，请求公司域名的js地址为script标签加上crossorigin属性
+
+## 工具函数&组件相关
+#### 11、jsonp请求工具函数封装总结
 - 无法获取script请求的响应内容
 - 如果script标签src地址响应的不是正确的函数执行代码，做超时处理
 - qs模块字符串序列化对象时，会对带协议的字段执行encodeURIComponent，需特别注意
@@ -100,87 +195,7 @@ export default function(url, params = {}) {
   });
 }
 ```
-
-#### 7、列表分页无限加载需要注意的问题
-- 由于是单页应用，数据驱动，在满足请求下一页的情况下，需做一下延时阻塞处理，否则会出现在滚动满足请求条件的情况下请求多页数据
-
-```js
-  async scrollEventListener() {
-    if (this.loading || (this.pageIndex !== 1 && this.pageIndex >= this.totalPages)) {
-      return;
-    }
-
-    const { clientHeight, scrollHeight } = document.documentElement;
-    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop || window.scrollTop;
-
-    if (scrollTop + clientHeight >= scrollHeight) {
-      this.loading = true;
-      this.errorMsg = '';
-
-      // 单页应用，数据驱动，
-      await new Promise(r => {
-        setTimeout(r, 500);
-      });
-
-      this.pageIndex++;
-      await this.requestNextPageData();
-      this.loading = false;
-    }
-  }
-```
-
-#### 8、理解页面路由守卫beforeRouteEnter中执行next(false)
-- 首先执行next(false)不会执行路由匹配组件的生命周期函数
-- 当前路由的路径是上一个路由的路径而不是当前执行next(false)所在组件的路由path
-
-```js
-// 当重定向授权成功后 按历史记录返回键返回时并不是该代码段所在组件匹配到的路由path
-beforeRouteEnter(to, from, next) {
-  // 客户端未授权
-  if (typeof window !== 'undefined' && !window.openId) {
-    // 重定向微信授权，逻辑省略...
-    next(false)
-    return;
-  }
-  next()
-}
-
-// 当重定向授权成功后 按历史记录返回键返回正常
-beforeRouteEnter(to, from, next) {
-  next(vm => {
-    // 服务端执行 或 已授权
-    if (vm.$isServer || window.openId) {
-      return;
-    }
-    // 重定向微信授权，逻辑省略...
-  });
-}
-```
-
-#### 9、微信浏览器内核的一些问题
-- video标签正在播放状态时，路由无法跳转，路由离开之前需暂停video播放
-- 安卓微信app支持video小窗播放，需增加x5-playsinlines属性
-
-```html
-<video
-  v-if="liveData.videoSrc"
-  ref="video"
-  class="live-player"
-  :src="liveData.videoSrc"
-  :poster="liveData.coverImageUrl"
-  preload
-  controls
-  x5-playsinline
-  webkit-playsinline="isiPhoneShowPlaysinline"
-  playsinline="isiPhoneShowPlaysinline">
-</video>
-```
-
-#### 10、本地测试微信授权，微信分享功能
-- 1、nginx监听80端口，server_name设为微信公众平台网页授权域名/JS接口安全域名，路径proxy_pass设为localhost:port
-- 2、本地hosts 配置域名解析，127.0.0.1 微信公众平台网页授权域名/JS接口安全域名
-
-#### 11、使用canvas开发一个loading组件总结
+#### 12、使用canvas开发一个loading组件总结
 - 新思路：当前的弧度由当前时间的秒跟毫秒决定
 
 ```js
