@@ -13,4 +13,4 @@
 - [错题本项目](./notebooks/错题本项目.md)
 - [home键项目](./notebooks/home键项目.md)
 - [小开英语听口一期项目](./notebooks/小开英语听口一期项目.md)
-- [学情报告项目](./notebooks/学情报告项目.md)
+- [学情报告项目](./notebooks/学情报告.md)
