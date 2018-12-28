@@ -66,8 +66,9 @@ async exitWebview() {
    * @return {undefined}
    */
   async backHome() {
-    await this.$clogger.emit("click", "8.8.1");
+    await this.$clogger.click("8.8.1");
 
+    // 如果后续代码没有路由跳转行为，你也可以这样使用this.$clogger.emit("click", "8.8.1");
     this.$router.push({
       path: "/home"
     });
