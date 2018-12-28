@@ -1,5 +1,5 @@
 # 2018项目总结
-- 吕超4000单词英语项目(进行中)
+- 吕超4000单词英语项目(./notebooks/吕超英语/index.md)
 - [心理直播项目](./notebooks/心理直播/index.md)
 - [学练一期项目](./notebooks/学练一期.md)
 - [题库项目](https://github.com/yjh30/ckeditor-mathjax-test)
