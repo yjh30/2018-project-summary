@@ -49,7 +49,7 @@ Vue.prototype.$clogger = clogger
 ```
 
 ## 4、在navBar公共组件中处理退出(关闭)webview
-```
+```js
 async exitWebview() {
   this.$clogger.emit("routeLeave", location.href);
   await new Promise(resolve => {
@@ -58,6 +58,7 @@ async exitWebview() {
   // 执行jsBridge封装好的关闭客户端webview方法
 }
 ```
+
 ## 5、处理click事件埋点
 ```js
   /**
