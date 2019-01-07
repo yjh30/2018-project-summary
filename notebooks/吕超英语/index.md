@@ -155,7 +155,7 @@ package.json有如下配置:
     "dev:stable": "npm run devServer --env=stable",
     "dev:sit": "npm run devServer --env=sit",
     "start": "npm run dev",
-    "build": "node build/build.js --env=production",
+    "build": "cross-env npm_config_env=production node build/build.js",
     "build:stable": "npm run build --env=stable",
     "build:sit": "npm run build --env=sit"
   }
