@@ -1,7 +1,7 @@
 # 吕超英语h5项目总结
 ## 技术重点模块
-- [移动端Vue单页应用 与 大数据埋点最佳实践](./clogger.md)
-- 改造[connect-history-api-fallback](https://www.npmjs.com/package/connect-history-api-fallback)，开发[koa-history-api-fallback-middleware](https://github.com/yjh30/koa-history-api-fallback-middleware)
+1、[移动端Vue单页应用 与 大数据埋点最佳实践](./clogger.md)
+2、改造[connect-history-api-fallback](https://www.npmjs.com/package/connect-history-api-fallback)，开发[koa-history-api-fallback-middleware](https://github.com/yjh30/koa-history-api-fallback-middleware)
 > 1、connect-history-api-fallback并不能用于node服务生产环境；2、使用koa-history-api-fallback-middleware与koa-static一定要注意顺序关系，举个例子（下面代码正常）：
 ```js
 const Koa = require('koa')
@@ -43,12 +43,12 @@ server.listen(5002)
 ```
 >如果模拟使用koa-static中间件逻辑代码放在模拟使用koa-history-api-fallback-middleware逻辑上面，那么访问localhost:5002/aa 就404了
 
-- 开发[koa-mocker-cli](https://www.npmjs.com/package/koa-mocker-cli)脚手架工具
+3、开发[koa-mocker-cli](https://www.npmjs.com/package/koa-mocker-cli)脚手架工具
 > 对process进程uncaughtException事件的重新认识：该事件捕获异步错误，一般如果异步错误耗损cpu及内存，监听该该事件应该尝试退出node进程然后尝试重启服务，如果错误只是简单的如vue ssr同构异步错误，那么为了保证线上其他项目不受影响应该打印错误日志并邮件通知开发，解决错误后重新打包部署服务
 
 ## 项目业务代码最优实现及难点记录
-- navBar公共组件的最优实现
-> 1、组件dom渲染后注册androidBackKey(全局性)事件监听，销毁后移除androidBackKey事件监听；2、考虑到路由页面组件使用了keep-alive缓存功能，应该在androidBackKeyListener监听器中只执行当前路由navBar逻辑；
+1、navBar公共组件的最优实现
+> 1.1、组件dom渲染后注册androidBackKey(全局性)事件监听，销毁后移除androidBackKey事件监听；1.2、考虑到路由页面组件使用了keep-alive缓存功能，应该在androidBackKeyListener监听器中只执行当前路由navBar逻辑；
 ```js
 export default {
   props: {
@@ -108,7 +108,7 @@ export default {
   }
 };
 ```
->3、如果一个路由页面有两个nav-bar组件，怎么办？看下面代码处理
+>1.3、如果一个路由页面有两个nav-bar组件，怎么办？看下面代码处理
 ```js
 let menuBackTimeout = null;
 
@@ -128,7 +128,7 @@ export default {
 };
 ```
 
-- 匹配重点单词正则
+2、匹配重点单词正则
 > 需要考虑英文单词后面紧跟. , ; ! ?
 ```js
 const reg = new RegExp(
@@ -138,7 +138,7 @@ const reg = new RegExp(
 ```
 > 之前错误的用法/[^|\s+]english/ig写成了/(?:^|\\s+)english/ig 正则/[^|\s+]english/ig 匹配'xxx随便写english'字符串，^在中括号表示非，后面跟什么就是非什么，这个例子是非空，\s在中括号中就是\s字符串而不是表示空字符串
 
-- 借助webpack.DefinePlugin将process.env环境变量写入到客户端代码中
+3、借助webpack.DefinePlugin将process.env环境变量写入到客户端代码中
 > package.json有如下配置:
 ```json
   "scripts": {
@@ -163,10 +163,10 @@ if (env === "production") {
 }
 ```
 
-- vue-router路由history模式无网络模式处理
+4、vue-router路由history模式无网络模式处理
 > 当点击一个按钮发生路由导航时，如果此时断网，将会无任何反应，因为导航变跟时会请求服务端html文件，此时断网将无响应，因此需判断当navigator.onLine为true时，执行vm.$router.push
 
-- 开发环境下引入腾讯[Vconsole](https://github.com/Tencent/vConsole)模块，如：
+5、开发环境下引入腾讯[Vconsole](https://github.com/Tencent/vConsole)模块，如：
 ```html
 <% if(!htmlWebpackPlugin.options.isProduction) { %>
 <script src="/static/js/vconsole.min.js"></script>
