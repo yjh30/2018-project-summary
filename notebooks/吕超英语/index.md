@@ -139,8 +139,8 @@ const reg = new RegExp(
 ```
 之前错误的用法
 ```js
- // 下面正则匹配 'xxx随便写english'字符串
- // ^在中括号表示非，后面跟什么就是非什么，这个例子是非空，\s在中括号中就是\s字符串而不是表示空字符串
+ // 下面正则匹配 '不为空随便写english'字符串
+ // ^在中括号表示非，|分隔符失效，这个正则匹配english前任何非空的字串，如：xxxenglish
 const reg = /[^|\s+]english/ig;
 ```
 
